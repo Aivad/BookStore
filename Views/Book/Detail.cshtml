@@ -1,0 +1,44 @@
+﻿@model BookStore.Models.Book
+
+@{
+    ViewData["Title"] = "Detail Buku - " + Model.Title;
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-5">
+            <img src="@Model.ImageUrl"
+                 class="img-fluid rounded shadow"
+                 alt="@Model.Title"
+                 onerror="this.src='/images/default-book.jpg'" />
+        </div>
+        <div class="col-md-7">
+            <h2>@Model.Title</h2>
+            <p class="text-muted">Penulis: <strong>@Model.Author</strong></p>
+
+            @if (Model.Category != null)
+            {
+                <p>Kategori: <span class="badge bg-secondary">@Model.Category.Name</span></p>
+            }
+
+            <hr />
+            <p class="lead">@Model.Description</p>
+            <hr />
+            <h3 class="text-success">Rp @Model.Price.ToString("N0")</h3>
+
+            <div class="mt-4">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a asp-controller="Cart" asp-action="AddToCart" asp-route-bookId="@Model.Id"
+                       class="btn btn-success btn-lg">Tambah ke Keranjang</a>
+                }
+                else
+                {
+                    <a asp-area="Identity" asp-page="/Account/Login"
+                       class="btn btn-success btn-lg">Login untuk Beli</a>
+                }
+                <a asp-action="Index" class="btn btn-outline-secondary">Kembali ke Daftar</a>
+            </div>
+        </div>
+    </div>
+</div>

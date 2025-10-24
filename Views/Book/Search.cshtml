@@ -1,0 +1,49 @@
+﻿@model List<BookStore.Models.Book>
+
+@{
+    ViewData["Title"] = "Hasil Pencarian";
+    var query = Context.Request.Query["query"].ToString();
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Hasil Pencarian: "@query"</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary">Lihat Semua Buku</a>
+    </div>
+
+    @if (Model == null || !Model.Any())
+    {
+        <div class="alert alert-info">
+            Tidak ada buku yang cocok dengan kata kunci "@query".
+        </div>
+    }
+    else
+    {
+        <p>Ditemukan @Model.Count() buku.</p>
+        <div class="row">
+            @foreach (var book in Model)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <img src="@book.ImageUrl"
+                             class="card-img-top"
+                             alt="@book.Title"
+                             style="height: 200px; object-fit: cover;"
+                             onerror="this.src='/images/default-book.jpg'" />
+                        <div class="card-body">
+                            <h5>@book.Title</h5>
+                            <p class="text-muted">Oleh @book.Author</p>
+                            <p>Rp @book.Price.ToString("N0")</p>
+                            <a asp-action="Details" asp-route-id="@book.Id" class="btn btn-sm btn-outline-primary">Detail</a>
+                            @if (User.Identity?.IsAuthenticated == true)
+                            {
+                                <a asp-controller="Cart" asp-action="AddToCart" asp-route-bookId="@book.Id"
+                                   class="btn btn-sm btn-success">Beli</a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
