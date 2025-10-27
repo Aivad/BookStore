@@ -30,5 +30,9 @@ namespace BookStore.Controllers
             var messages = await _context.ContactMessages.ToListAsync();
             return View(messages);
         }
+
+
+
+
     }
 }

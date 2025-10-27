@@ -1,6 +1,6 @@
 ﻿using BookStore.Data;
 using BookStore.Data.Seed;
-using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,12 +11,16 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
-    .AddRoles<IdentityRole>()
-    .AddEntityFrameworkStores<AppDbContext>();
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login";
+        options.LogoutPath = "/Account/Logout";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+    });
 
+builder.Services.AddAuthorization();
 builder.Services.AddControllersWithViews();
-builder.Services.AddRazorPages(); // ← BARIS INI DITAMBAHKAN
 
 var app = builder.Build();
 
@@ -35,8 +39,7 @@ app.UseAuthorization();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
-app.MapRazorPages(); // untuk Identity UI
 
-await RoleSeeder.SeedRoles(app.Services);
+//await RoleSeeder.SeedRolesAsync(app.Services);
 
 app.Run();

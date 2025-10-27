@@ -1,27 +1,33 @@
-﻿// Data/Seed/RoleSeeder.cs
-// Berfungsi untuk melakukan seed data role (memasukkan data role pertamakali) ke dalam database saat aplikasi dijalankan.
-// untuk admin dan user
-
-using Microsoft.AspNetCore.Identity;
+﻿using BookStore.Data;
+using BookStore.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using System.Threading.Tasks;
 
 namespace BookStore.Data.Seed
 {
     public static class RoleSeeder
     {
-        public static async Task SeedRoles(IServiceProvider serviceProvider)
+        public static async Task SeedRolesAsync(IServiceProvider serviceProvider)
         {
             using var scope = serviceProvider.CreateScope();
-            var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            // Only seed if no roles exist
+            if (await context.Roles.AnyAsync()) return;
 
             var roles = new[] { "Admin", "User" };
-            foreach (var role in roles)
+
+            foreach (var roleName in roles)
             {
-                if (!await roleManager.RoleExistsAsync(role))
+                context.Roles.Add(new ApplicationRole
                 {
-                    await roleManager.CreateAsync(new IdentityRole(role));
-                }
+                    Id = Guid.NewGuid().ToString(),
+                    Name = roleName
+                });
             }
+
+            await context.SaveChangesAsync();
         }
     }
 }

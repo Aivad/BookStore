@@ -19,7 +19,7 @@ namespace BookStore.Controllers
             else
             {
                 // Belum login → arahkan ke halaman Login Identity
-                return LocalRedirect("/Identity/Account/Login");
+                return RedirectToAction("Login", "Account");
             }
         }
 
