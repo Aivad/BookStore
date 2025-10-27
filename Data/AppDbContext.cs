@@ -10,13 +10,12 @@ namespace BookStore.Data
         {
         }
 
-        // Your app entities
         public DbSet<Book> Books { get; set; } = default!;
         public DbSet<Category> Categories { get; set; } = default!;
         public DbSet<Cart> CartItems { get; set; } = default!;
         public DbSet<Contact> ContactMessages { get; set; } = default!;
 
-        // Identity-like tables (mapped manually)
+        // Identity-like tables
         public DbSet<ApplicationUser> Users { get; set; }
         public DbSet<ApplicationRole> Roles { get; set; }
         public DbSet<ApplicationUserRole> UserRoles { get; set; }
@@ -30,9 +29,20 @@ namespace BookStore.Data
             modelBuilder.Entity<ApplicationRole>().ToTable("AspNetRoles");
             modelBuilder.Entity<ApplicationUserRole>().ToTable("AspNetUserRoles");
 
-            // Configure composite key for UserRoles
+            // 🔑 Configure composite primary key for UserRoles
             modelBuilder.Entity<ApplicationUserRole>()
                 .HasKey(ur => new { ur.UserId, ur.RoleId });
+
+            // Optional: Configure relationships
+            modelBuilder.Entity<ApplicationUserRole>()
+                .HasOne(ur => ur.User)
+                .WithMany()
+                .HasForeignKey(ur => ur.UserId);
+
+            modelBuilder.Entity<ApplicationUserRole>()
+                .HasOne(ur => ur.Role)
+                .WithMany()
+                .HasForeignKey(ur => ur.RoleId);
         }
     }
 }

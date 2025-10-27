@@ -1,8 +1,9 @@
 ﻿using BookStore.Data;
 using BookStore.Models;
+using BookStore.Views.Account.ViewModel;
+//using BookStore.Views.Account.ViewModels;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -76,14 +77,13 @@ namespace BookStore.Controllers
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var authProperties = new AuthenticationProperties
             {
-                IsPersistent = model.RememberMe, // ← REMEMBER ME!
+                IsPersistent = model.RememberMe,
                 ExpiresUtc = model.RememberMe ? DateTimeOffset.UtcNow.AddDays(7) : DateTimeOffset.UtcNow.AddMinutes(30)
             };
 
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
                 new ClaimsPrincipal(claimsIdentity), authProperties);
 
-            // Redirect after login
             if (Url.IsLocalUrl(returnUrl))
                 return LocalRedirect(returnUrl);
             else
@@ -99,24 +99,23 @@ namespace BookStore.Controllers
         // POST: /Account/Register
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(string username, string email, string password)
+        public async Task<IActionResult> Register(RegisterViewModel model)
         {
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
-            {
-                ModelState.AddModelError("", "All fields are required.");
-                return View();
-            }
+            if (!ModelState.IsValid)
+                return View(model);
 
-            if (await _context.Users.AnyAsync(u => u.UserName == username || u.Email == email))
+            if (await _context.Users.AnyAsync(u => u.Email == model.Email))
             {
-                ModelState.AddModelError("", "Username or email already exists.");
-                return View();
+                ModelState.AddModelError("Email", "Email already registered.");
+                return View(model);
             }
 
             var user = new ApplicationUser
             {
-                UserName = username,
-                Email = email,
+                UserName = model.Email.Split('@')[0], // Simple username from email
+                NormalizedUserName = model.Email.Split('@')[0].ToUpper(),
+                Email = model.Email,
+                NormalizedEmail = model.Email.ToUpper(),
                 EmailConfirmed = false,
                 LockoutEnabled = true,
                 AccessFailedCount = 0,
@@ -124,12 +123,12 @@ namespace BookStore.Controllers
                 ConcurrencyStamp = Guid.NewGuid().ToString()
             };
 
-            user.PasswordHash = _passwordHasher.HashPassword(user, password);
+            user.PasswordHash = _passwordHasher.HashPassword(user, model.Password);
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            // Assign default role (e.g., "User")
+            // Assign default role "User"
             var defaultRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "User");
             if (defaultRole != null)
             {
@@ -141,7 +140,18 @@ namespace BookStore.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction("Login");
+            // Auto-login after registration
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.NameIdentifier, user.Id)
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme,
+                new ClaimsPrincipal(claimsIdentity), new AuthenticationProperties { IsPersistent = true });
+
+            return RedirectToAction("Index", "Home");
         }
 
         // POST: /Account/Logout

@@ -2,8 +2,10 @@
 
 namespace BookStore.Views.Account.ViewModel
 {
-    public class LoginViewModel
+    public class RegisterViewModel
     {
+        public string Username { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Invalid email address.")]
         public string Email { get; set; } = string.Empty;
@@ -12,7 +14,10 @@ namespace BookStore.Views.Account.ViewModel
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
 
-        [Display(Name = "Remember me?")]
-        public bool RememberMe { get; set; }
+        [DataType(DataType.Password)]
+        [Compare("Password", ErrorMessage = "Passwords do not match.")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+
+        public string Role { get; set; } = "user";
     }
 }

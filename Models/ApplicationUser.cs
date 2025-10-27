@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BookStore.Models
 {
+    [Table("AspNetUsers")]
     public class ApplicationUser
     {
         [Key]
@@ -25,6 +26,10 @@ namespace BookStore.Models
         public string? PasswordHash { get; set; }
         public string? SecurityStamp { get; set; }
         public string? ConcurrencyStamp { get; set; } = Guid.NewGuid().ToString();
+
+        // 👇 ADD THIS
+        public string? PhoneNumber { get; set; }
+
         public bool PhoneNumberConfirmed { get; set; }
         public bool TwoFactorEnabled { get; set; }
         public bool LockoutEnabled { get; set; }

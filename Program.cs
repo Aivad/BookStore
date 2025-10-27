@@ -40,6 +40,12 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
+
+///<summary>
+/// Seeder digunakan untuk menambhakan data asecar otomatis kedalam datatable tertentu
+/// tujuannya adalah untuk mempopulasikan table agar terdapat data yang valid
+/// cukup dijalankan sekali saja
+/// </summary>
 //await RoleSeeder.SeedRolesAsync(app.Services);
 
 app.Run();

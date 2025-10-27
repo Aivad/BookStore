@@ -3,6 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BookStore.Models
 {
+    [Table("AspNetRoles")]
     public class ApplicationRole
     {
         [Key]
