@@ -3,6 +3,10 @@ using BookStore.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+///<summary>
+///Program Berikut merupakan program untuk menghandle tampilan home pada halaman setelah login
+///</summary>
+
 namespace BookStore.Controllers
 {
     public class BookController : Controller

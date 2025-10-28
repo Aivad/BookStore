@@ -1,38 +1,24 @@
-﻿using BookStore.Data;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace BookStore.Controllers
 {
     [Authorize(Roles = "Admin")]
     public class AdminController : Controller
     {
-        private readonly AppDbContext _context;
-
-        public AdminController(AppDbContext context)
+        public IActionResult Dashboard()
         {
-            _context = context;
+            return View();
         }
 
-
-        // Menampilkan daftar user
-        public async Task<IActionResult> UsersList()
+        public IActionResult IndexUser()
         {
-            var users = await _context.Users.ToListAsync();
-            return View(users);
+            return View("IndexUser");
         }
 
-
-        //Menampilkan daftar pesanan (dilihat dari statusnya)
-        public async Task<IActionResult> OrdersList()
+        public IActionResult IndexBook()
         {
-            var messages = await _context.ContactMessages.ToListAsync();
-            return View(messages);
+            return View("IndexBook");
         }
-
-
-
-
     }
 }

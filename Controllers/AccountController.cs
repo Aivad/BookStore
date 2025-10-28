@@ -86,8 +86,15 @@ namespace BookStore.Controllers
 
             if (Url.IsLocalUrl(returnUrl))
                 return LocalRedirect(returnUrl);
+
+            if (roleNames.Contains("Admin"))
+            {
+                return RedirectToAction("Dashboard", "Admin");
+            }
             else
+            {
                 return RedirectToAction("Index", "Home");
+            }
         }
 
         // GET: /Account/Register
