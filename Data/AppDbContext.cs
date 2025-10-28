@@ -43,6 +43,11 @@ namespace BookStore.Data
                 .HasOne(ur => ur.Role)
                 .WithMany(r => r.UserRoles)
                 .HasForeignKey(ur => ur.RoleId);
+
+            //modelBuilder.Entity<Book>()
+            //    .HasOne(b => b.Category)
+            //    .WithMany(c => c.Books)
+            //    .HasForeignKey(b => b.CategoryId);
         }
     }
 }

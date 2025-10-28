@@ -1,0 +1,39 @@
+﻿@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Create User";
+}
+
+<h2>Create User</h2>
+
+<form asp-action="CreateUser" method="post">
+    <div class="mb-3">
+        <label class="form-label">Username <span class="text-danger">*</span></label>
+        <input name="Username" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Email <span class="text-danger">*</span></label>
+        <input name="Email" type="email" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Password <span class="text-danger">*</span></label>
+        <input name="Password" type="password" class="form-control" required minlength="6" />
+        <div class="form-text">Minimum 6 characters.</div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Role <span class="text-danger">*</span></label><br />
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="Role" value="Admin" id="roleAdmin" required>
+            <label class="form-check-label" for="roleAdmin">Admin</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="Role" value="User" id="roleUser" required>
+            <label class="form-check-label" for="roleUser">User</label>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create User</button>
+    <a asp-action="IndexUser" class="btn btn-secondary">Cancel</a>
+</form>

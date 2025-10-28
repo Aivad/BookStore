@@ -9,6 +9,15 @@
 <h2>Manage Users</h2>
 
 <form asp-action="DeleteUsers" method="post" id="deleteForm">
+    <div class="d-flex justify-content-between mb-3">
+        <a asp-action="CreateUser" class="btn btn-success">
+            <i class="bi bi-plus"></i> Create New User
+        </a>
+        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete selected users?');">
+            Delete Selected
+        </button>
+    </div>
+
     <div class="table-responsive">
         <table class="table table-striped table-bordered">
             <thead class="table-dark">
@@ -24,6 +33,7 @@
                 @foreach (var user in Model)
                 {
                     var role = user.UserRoles?.FirstOrDefault()?.Role?.Name ?? "User";
+
                     <tr>
                         <td><input type="checkbox" name="selectedIds" value="@user.Id" /></td>
                         <td>@user.UserName</td>
@@ -43,34 +53,28 @@
         </table>
     </div>
 
-    <div class="d-flex justify-content-between align-items-center mt-3">
-        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete selected users?');">
-            Delete Selected
-        </button>
-
-        <nav>
-            <ul class="pagination mb-0">
-                @if (currentPage > 1)
-                {
-                    <li class="page-item">
-                        <a class="page-link" asp-action="IndexUser" asp-route-page="@(currentPage - 1)">Previous</a>
-                    </li>
-                }
-                @for (int i = 1; i <= totalPages; i++)
-                {
-                    <li class="page-item @(i == currentPage ? "active" : "")">
-                        <a class="page-link" asp-action="IndexUser" asp-route-page="@i">@i</a>
-                    </li>
-                }
-                @if (currentPage < totalPages)
-                {
-                    <li class="page-item">
-                        <a class="page-link" asp-action="IndexUser" asp-route-page="@(currentPage + 1)">Next</a>
-                    </li>
-                }
-            </ul>
-        </nav>
-    </div>
+    <nav>
+        <ul class="pagination mb-0">
+            @if (currentPage > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" asp-action="IndexUser" asp-route-page="@(currentPage - 1)">Previous</a>
+                </li>
+            }
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                <li class="page-item @(i == currentPage ? "active" : "")">
+                    <a class="page-link" asp-action="IndexUser" asp-route-page="@i">@i</a>
+                </li>
+            }
+            @if (currentPage < totalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link" asp-action="IndexUser" asp-route-page="@(currentPage + 1)">Next</a>
+                </li>
+            }
+        </ul>
+    </nav>
 </form>
 
 @section Scripts {

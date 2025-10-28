@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using BookStore.Data;
+using BookStore.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
-using BookStore.Data;
-using BookStore.Models;
+using System.IO;
+using System;
 using System.Security.Claims;
 
 namespace BookStore.Controllers
@@ -39,6 +41,69 @@ namespace BookStore.Controllers
 
             return View(users);
         }
+
+        // GET: /Admin/CreateUser
+        public IActionResult CreateUser()
+        {
+            return View();
+        }
+
+        // POST: /Admin/CreateUser
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateUser(string Username, string Email, string Password, string Role)
+        {
+            if (string.IsNullOrWhiteSpace(Username) || string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Password))
+            {
+                ModelState.AddModelError("", "Username, email, and password are required.");
+                return View();
+            }
+
+            // Check if user already exists
+            if (await _context.Users.AnyAsync(u => u.Email == Email || u.UserName == Username))
+            {
+                ModelState.AddModelError("", "Username or email already exists.");
+                return View();
+            }
+
+            var user = new ApplicationUser
+            {
+                Id = Guid.NewGuid().ToString(),
+                UserName = Username,
+                Email = Email,
+                NormalizedUserName = Username.ToUpperInvariant(),
+                NormalizedEmail = Email.ToUpperInvariant(),
+                EmailConfirmed = false,
+                LockoutEnabled = true,
+                AccessFailedCount = 0,
+                SecurityStamp = Guid.NewGuid().ToString(),
+                ConcurrencyStamp = Guid.NewGuid().ToString()
+            };
+
+            // Hash password
+            var passwordHasher = new PasswordHasher<ApplicationUser>();
+            user.PasswordHash = passwordHasher.HashPassword(user, Password);
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            // Assign role
+            var roleEntity = await _context.Roles.FirstOrDefaultAsync(r => r.Name == Role);
+            if (roleEntity != null)
+            {
+                _context.UserRoles.Add(new ApplicationUserRole
+                {
+                    UserId = user.Id,
+                    RoleId = roleEntity.Id
+                });
+                await _context.SaveChangesAsync();
+            }
+
+            TempData["Success"] = "User created successfully.";
+            return RedirectToAction("IndexUser");
+        }
+
+
 
         // POST: /Admin/DeleteUsers
         [HttpPost]
@@ -251,9 +316,160 @@ namespace BookStore.Controllers
 
 
 
-        public IActionResult IndexBook()
+        // GET: /Admin/IndexBook
+        public async Task<IActionResult> IndexBook(int page = 1)
         {
-            return View("IndexBook");
+            const int pageSize = 10;
+            var books = await _context.Books
+                .Include(b => b.Category)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var totalBooks = await _context.Books.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalBooks / pageSize);
+
+            ViewBag.Page = page;
+            ViewBag.TotalPages = totalPages;
+
+            return View(books);
+        }
+
+        // POST: /Admin/DeleteBooks
+        [HttpPost]
+        public async Task<IActionResult> DeleteBooks(List<int> selectedIds)
+        {
+            if (selectedIds != null && selectedIds.Any())
+            {
+                var booksToDelete = await _context.Books
+                    .Where(b => selectedIds.Contains(b.Id))
+                    .ToListAsync();
+
+                _context.Books.RemoveRange(booksToDelete);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction("IndexBook");
+        }
+
+        // GET: /Admin/CreateBook
+        public IActionResult CreateBook()
+        {
+            ViewData["Categories"] = _context.Categories.ToList();
+            return View();
+        }
+
+        // POST: /Admin/CreateBook
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateBook(Book model, IFormFile? imageFile)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            // Handle image upload
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                if (imageFile.Length > 25 * 1024 * 1024) // 25MB limit
+                {
+                    ModelState.AddModelError("imageFile", "Image size must be less than 25MB.");
+                    ViewData["Categories"] = _context.Categories.ToList();
+                    return View(model);
+                }
+
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await imageFile.CopyToAsync(stream);
+                }
+
+                model.ImageUrl = "/uploads/" + fileName;
+            }
+
+            _context.Books.Add(model);
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Book created successfully.";
+            return RedirectToAction("IndexBook");
+        }
+
+        // GET: /Admin/EditBook/{id}
+        public async Task<IActionResult> EditBook(int id)
+        {
+            var book = await _context.Books
+                .Include(b => b.Category)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (book == null) return NotFound();
+
+            ViewData["Categories"] = _context.Categories.ToList();
+            return View(book);
+        }
+
+        // POST: /Admin/EditBook/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditBook(int id, Book model, IFormFile? imageFile)
+        {
+            if (id != model.Id) return BadRequest();
+
+            var book = await _context.Books
+                .Include(b => b.Category)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (book == null) return NotFound();
+
+            if (!ModelState.IsValid) return View(model);
+
+            // Update fields
+            book.Title = model.Title;
+            book.Author = model.Author;
+            book.Description = model.Description;
+            book.Price = model.Price;
+            book.Stock = model.Stock;
+            book.CategoryId = model.CategoryId;
+
+            // Handle image upload
+            if (imageFile != null && imageFile.Length > 0)
+            {
+                if (imageFile.Length > 25 * 1024 * 1024) // 25MB limit
+                {
+                    ModelState.AddModelError("imageFile", "Image size must be less than 25MB.");
+                    ViewData["Categories"] = _context.Categories.ToList();
+                    return View(model);
+                }
+
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await imageFile.CopyToAsync(stream);
+                }
+
+                book.ImageUrl = "/uploads/" + fileName;
+            }
+
+            try
+            {
+                _context.Update(book);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Book updated successfully.";
+                return RedirectToAction("IndexBook");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "An error occurred while saving.");
+                ViewData["Categories"] = _context.Categories.ToList();
+                return View(model);
+            }
         }
 
 
