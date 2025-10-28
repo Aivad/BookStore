@@ -1,0 +1,32 @@
+﻿@model BookStore.Models.ApplicationUser
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "User Detail";
+}
+
+<h2>User Detail</h2>
+
+<div class="card">
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Username</dt>
+            <dd class="col-sm-9">@Model.UserName</dd>
+
+            <dt class="col-sm-3">Email</dt>
+            <dd class="col-sm-9">@Model.Email</dd>
+
+            <dt class="col-sm-3">Role</dt>
+            <dd class="col-sm-9">
+                @(Model.UserRoles?.FirstOrDefault()?.Role?.Name ?? "User")
+            </dd>
+
+            <dt class="col-sm-3">Email Confirmed</dt>
+            <dd class="col-sm-9">@(Model.EmailConfirmed ? "Yes" : "No")</dd>
+
+            <dt class="col-sm-3">Created</dt>
+            <dd class="col-sm-9">@Model.ConcurrencyStamp</dd>
+        </dl>
+    </div>
+</div>
+
+<a asp-action="IndexUser" class="btn btn-secondary mt-3">← Back to List</a>

@@ -6,8 +6,8 @@ namespace BookStore.Controllers
     {
         /// <summary>
         /// Halaman awal aplikasi.
-        /// - Jika user belum login → arahkan ke halaman Login (Identity)
-        /// - Jika sudah login → arahkan ke daftar buku
+        /// - Jika user belum login → arahkan ke halaman Login
+        /// - Jika sudah login → arahkan ke daftar buku (homepage)
         /// </summary>
         public IActionResult Index()
         {

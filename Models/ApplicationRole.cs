@@ -12,5 +12,7 @@ namespace BookStore.Models
         [Required]
         [MaxLength(256)]
         public string Name { get; set; } = string.Empty;
+
+        public ICollection<ApplicationUserRole> UserRoles { get; set; } = new List<ApplicationUserRole>();
     }
 }

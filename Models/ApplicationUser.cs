@@ -27,7 +27,6 @@ namespace BookStore.Models
         public string? SecurityStamp { get; set; }
         public string? ConcurrencyStamp { get; set; } = Guid.NewGuid().ToString();
 
-        // 👇 ADD THIS
         public string? PhoneNumber { get; set; }
 
         public bool PhoneNumberConfirmed { get; set; }
@@ -35,5 +34,8 @@ namespace BookStore.Models
         public bool LockoutEnabled { get; set; }
         public int AccessFailedCount { get; set; }
         public DateTimeOffset? LockoutEnd { get; set; }
+
+
+        public ICollection<ApplicationUserRole> UserRoles { get; set; } = new List<ApplicationUserRole>();
     }
 }

@@ -36,12 +36,12 @@ namespace BookStore.Data
             // Optional: Configure relationships
             modelBuilder.Entity<ApplicationUserRole>()
                 .HasOne(ur => ur.User)
-                .WithMany()
-                .HasForeignKey(ur => ur.UserId);
+                .WithMany(u => u.UserRoles) // Mapping ke table relasi
+                .HasForeignKey(ur => ur.UserId); // Mapping ke UserId pda table lain dengan penyebutan terkait
 
             modelBuilder.Entity<ApplicationUserRole>()
                 .HasOne(ur => ur.Role)
-                .WithMany()
+                .WithMany(r => r.UserRoles)
                 .HasForeignKey(ur => ur.RoleId);
         }
     }
