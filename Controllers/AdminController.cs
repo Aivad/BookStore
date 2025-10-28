@@ -159,9 +159,105 @@ namespace BookStore.Controllers
             }
         }
 
+
+        // GET: /Admin/IndexCategory
+        public async Task<IActionResult> IndexCategory(int page = 1)
+        {
+            const int pageSize = 10;
+            var categories = await _context.Categories
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var totalCategories = await _context.Categories.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalCategories / pageSize);
+
+            ViewBag.Page = page;
+            ViewBag.TotalPages = totalPages;
+
+            return View(categories);
+        }
+
+        // POST: /Admin/DeleteCategories
+        [HttpPost]
+        public async Task<IActionResult> DeleteCategories(List<int> selectedIds)
+        {
+            if (selectedIds != null && selectedIds.Any())
+            {
+                var categoriesToDelete = await _context.Categories
+                    .Where(c => selectedIds.Contains(c.Id))
+                    .ToListAsync();
+
+                _context.Categories.RemoveRange(categoriesToDelete);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction("IndexCategory");
+        }
+
+        // GET: /Admin/CreateCategory
+        public IActionResult CreateCategory()
+        {
+            return View();
+        }
+
+        // POST: /Admin/CreateCategory
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateCategory(Category model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            _context.Categories.Add(model);
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "Category created successfully.";
+            return RedirectToAction("IndexCategory");
+        }
+
+        // GET: /Admin/EditCategory/{id}
+        public async Task<IActionResult> EditCategory(int id)
+        {
+            var category = await _context.Categories.FindAsync(id);
+            if (category == null) return NotFound();
+            return View(category);
+        }
+
+        // POST: /Admin/EditCategory/{id}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditCategory(int id, Category model)
+        {
+            if (id != model.Id) return BadRequest();
+
+            var category = await _context.Categories.FindAsync(id);
+            if (category == null) return NotFound();
+
+            if (!ModelState.IsValid) return View(model);
+
+            category.Name = model.Name;
+
+            try
+            {
+                _context.Update(category);
+                await _context.SaveChangesAsync();
+                TempData["Success"] = "Category updated successfully.";
+                return RedirectToAction("IndexCategory");
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "An error occurred while saving.");
+                return View(model);
+            }
+        }
+
+
+
         public IActionResult IndexBook()
         {
             return View("IndexBook");
         }
+
+
+
+
     }
 }

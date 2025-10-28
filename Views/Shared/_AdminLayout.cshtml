@@ -40,9 +40,13 @@
 </head>
 <body>
 
+    @using System.Security.Claims
+
     <!-- Top Navbar -->
     <nav class="navbar navbar-dark bg-dark fixed-top">
-        <a class="navbar-brand" asp-controller="Admin" asp-action="Dashboard">Admin Panel</a>
+        <a class="navbar-brand" asp-controller="Admin" asp-action="Dashboard">
+            Admin Panel — @User.Identity.Name
+        </a>
 
         <div class="d-flex align-items-center">
             <a class="btn btn-outline-light btn-sm me-2" asp-controller="Home" asp-action="Index">← Back to Store</a>
@@ -81,6 +85,13 @@
                                asp-controller="Admin" asp-action="IndexBook">
                                 <span data-feather="book"></span>
                                 Books
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "IndexCategory" ? "active" : "")"
+                               asp-controller="Admin" asp-action="IndexCategory">
+                                <span data-feather="tag"></span>
+                                Categories
                             </a>
                         </li>
                     </ul>
