@@ -2,6 +2,7 @@
 using BookStore.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 ///<summary>
 ///Program Berikut merupakan program untuk menghandle tampilan home pada halaman setelah login
@@ -24,6 +25,14 @@ namespace BookStore.Controllers
             var books = await _context.Books
                 .Include(b => b.Category)
                 .ToListAsync();
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var cartItems = await _context.CartItems
+                .Where(c => c.UserId == userId)
+                .ToListAsync();
+
+            ViewBag.CartItemCount = cartItems.Sum(i => i.Quantity);
+
             return View(books);
         }
 

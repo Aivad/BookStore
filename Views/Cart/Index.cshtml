@@ -1,18 +1,64 @@
-﻿@{
+﻿@model List<BookStore.Models.Cart>
+@{
     ViewData["Title"] = "Your Cart";
     Layout = "_Layout";
 }
 
 <h2>Your Cart</h2>
 
-<div class="alert alert-info">
-    <i class="bi bi-info-circle"></i> This is a placeholder. Items will appear here when you add books to cart.
-</div>
-
-<div class="card">
-    <div class="card-body">
-        <p class="card-text">No items in cart.</p>
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> No items in cart. <a asp-controller="Home" asp-action="Index">Continue Shopping</a>
     </div>
-</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Book</th>
+                    <th>Price</th>
+                    <th>Quantity</th>
+                    <th>Total</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>
+                            <img src="@item.Book?.ImageUrl" alt="@item.Book?.Title" width="50" class="me-2" />
+                            @item.Book?.Title
+                        </td>
+                        <td>Rp @item.Book?.Price.ToString("N0", new System.Globalization.CultureInfo("id-ID"))</td>
+                        <td>
+                            <form asp-action="Update" method="post" class="d-inline">
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <input type="number" name="quantity" class="form-control form-control-sm" min="1" max="@item.Book?.Stock" value="@item.Quantity" style="width: 80px;" />
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Update</button>
+                            </form>
+                        </td>
+                        <td>Rp @(item.Book?.Price * item.Quantity)</td>
+                        <td>
+                            <form asp-action="Remove" method="post" class="d-inline">
+                                <input type="hidden" name="id" value="@item.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 
-<a asp-controller="Home" asp-action="Index" class="btn btn-secondary mt-3">Continue Shopping</a>
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <h5>Total: Rp @Model.Sum(i => i.Book?.Price * i.Quantity ?? 0m).ToString("N0", new System.Globalization.CultureInfo("id-ID"))</h5>
+        <div>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Continue Shopping</a>
+            <a href="#" class="btn btn-primary ms-2">Checkout</a>
+        </div>
+    </div>
+}

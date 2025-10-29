@@ -20,16 +20,23 @@ namespace BookStore.Data
         public DbSet<ApplicationRole> Roles { get; set; }
         public DbSet<ApplicationUserRole> UserRoles { get; set; }
 
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<PaymentMethod> PaymentMethods { get; set; }
+        public DbSet<ItemOrder> OrderItems { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Map to existing Identity table names
+            // Map existing table terkait
             modelBuilder.Entity<ApplicationUser>().ToTable("AspNetUsers");
             modelBuilder.Entity<ApplicationRole>().ToTable("AspNetRoles");
             modelBuilder.Entity<ApplicationUserRole>().ToTable("AspNetUserRoles");
+            modelBuilder.Entity<PaymentMethod>().ToTable("PaymentMethods");
+            modelBuilder.Entity<Order>().ToTable("Orders");
+            modelBuilder.Entity<ItemOrder>().ToTable("OrderItems");
 
-            // 🔑 Configure composite primary key for UserRoles
+            // Configure gabungan primary key untuk UserRoles
             modelBuilder.Entity<ApplicationUserRole>()
                 .HasKey(ur => new { ur.UserId, ur.RoleId });
 
@@ -58,6 +65,16 @@ namespace BookStore.Data
                 .HasOne(c => c.Book)
                 .WithMany()
                 .HasForeignKey(c => c.BookId);
+
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.User)
+                .WithMany()
+                .HasForeignKey(o => o.UserId);
+
+            modelBuilder.Entity<Order>()
+                .HasOne(o => o.PaymentMethod)
+                .WithMany()
+                .HasForeignKey(o => o.PaymentMethodId);
         }
     }
 }

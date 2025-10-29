@@ -18,6 +18,7 @@ namespace BookStore.Controllers
         }
 
         // GET: /Cart
+        [Authorize]
         public async Task<IActionResult> Index()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -26,6 +27,7 @@ namespace BookStore.Controllers
                 .Where(c => c.UserId == userId)
                 .ToListAsync();
 
+            ViewBag.CartItemCount = cartItems.Sum(i => i.Quantity);
             return View(cartItems);
         }
 
@@ -46,8 +48,7 @@ namespace BookStore.Controllers
 
             if (existingItem != null)
             {
-                existingItem.Quantity += quantity;
-                if (existingItem.Quantity > book.Stock) existingItem.Quantity = book.Stock;
+                existingItem.Quantity = Math.Min(existingItem.Quantity + quantity, book.Stock);
                 _context.Update(existingItem);
             }
             else

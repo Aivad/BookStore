@@ -10,9 +10,14 @@
     <div class="col-md-4">
         <section>
             <form asp-controller="Account" asp-action="Login" method="post">
-                <h2>Use a local account to log in.</h2>
+                <h2>(Use a local account to log in.)</h2>
                 <hr />
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                @if (TempData["Message"] != null)
+                {
+                    <div class="alert alert-info">@TempData["Message"]</div>
+                }
 
                 <div class="form-floating mb-3">
                     <input asp-for="Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />

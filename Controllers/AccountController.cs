@@ -167,7 +167,8 @@ namespace BookStore.Controllers
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            return RedirectToAction("Index", "Home");
+            TempData["Message"] = "You have been successfully logged out.";
+            return RedirectToAction("Login", "Account");
         }
     }
 }
