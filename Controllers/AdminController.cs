@@ -363,7 +363,12 @@ namespace BookStore.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateBook(Book model, IFormFile? imageFile)
         {
-            if (!ModelState.IsValid) return View(model);
+            ViewData["Categories"] = _context.Categories.ToList();
+
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
 
             // Handle image upload
             if (imageFile != null && imageFile.Length > 0)
@@ -371,23 +376,37 @@ namespace BookStore.Controllers
                 if (imageFile.Length > 25 * 1024 * 1024) // 25MB limit
                 {
                     ModelState.AddModelError("imageFile", "Image size must be less than 25MB.");
-                    ViewData["Categories"] = _context.Categories.ToList();
                     return View(model);
                 }
 
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+
+                // Ensure folder exists
                 if (!Directory.Exists(uploadsFolder))
                     Directory.CreateDirectory(uploadsFolder);
 
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(imageFile.FileName);
                 var filePath = Path.Combine(uploadsFolder, fileName);
 
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                try
                 {
-                    await imageFile.CopyToAsync(stream);
-                }
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await imageFile.CopyToAsync(stream);
+                    }
 
-                model.ImageUrl = "/uploads/" + fileName;
+                    model.ImageUrl = "/uploads/" + fileName;
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("imageFile", $"Failed to save image: {ex.Message}");
+                    return View(model);
+                }
+            }
+            else
+            {
+                // Use default image if no file uploaded
+                model.ImageUrl = "/images/no_image_available.jpg";
             }
 
             _context.Books.Add(model);
@@ -414,6 +433,8 @@ namespace BookStore.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditBook(int id, Book model, IFormFile? imageFile)
         {
+            ViewData["Categories"] = _context.Categories.ToList();
+
             if (id != model.Id) return BadRequest();
 
             var book = await _context.Books
@@ -422,7 +443,10 @@ namespace BookStore.Controllers
 
             if (book == null) return NotFound();
 
-            if (!ModelState.IsValid) return View(model);
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
 
             // Update fields
             book.Title = model.Title;
@@ -472,7 +496,90 @@ namespace BookStore.Controllers
             }
         }
 
+        // GET: /Admin/IndexCart
+        public async Task<IActionResult> IndexCart(int page = 1)
+        {
+            const int pageSize = 10;
+            var cartItems = await _context.CartItems
+                .Include(c => c.User)
+                .Include(c => c.Book)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
 
+            var total = await _context.CartItems.CountAsync();
+            ViewBag.Page = page;
+            ViewBag.TotalPages = (int)Math.Ceiling((double)total / pageSize);
+
+            return View(cartItems);
+        }
+
+        // GET: /Admin/CreateCart
+        public IActionResult CreateCart()
+        {
+            ViewData["Users"] = _context.Users.ToList();
+            ViewData["Books"] = _context.Books.ToList();
+            return View();
+        }
+
+        // POST: /Admin/CreateCart
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateCart(Cart model)
+        {
+            if (ModelState.IsValid)
+            {
+                _context.CartItems.Add(model);
+                await _context.SaveChangesAsync();
+                return RedirectToAction("IndexCart");
+            }
+            ViewData["Users"] = _context.Users.ToList();
+            ViewData["Books"] = _context.Books.ToList();
+            return View(model);
+        }
+
+        // GET: /Admin/EditCart/5
+        public async Task<IActionResult> EditCart(int id)
+        {
+            var item = await _context.CartItems.FindAsync(id);
+            if (item == null) return NotFound();
+            ViewData["Users"] = _context.Users.ToList();
+            ViewData["Books"] = _context.Books.ToList();
+            return View(item);
+        }
+
+        // POST: /Admin/EditCart/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditCart(int id, Cart model)
+        {
+            if (id != model.Id) return BadRequest();
+
+            if (ModelState.IsValid)
+            {
+                _context.Update(model);
+                await _context.SaveChangesAsync();
+                return RedirectToAction("IndexCart");
+            }
+            ViewData["Users"] = _context.Users.ToList();
+            ViewData["Books"] = _context.Books.ToList();
+            return View(model);
+        }
+
+        // POST: /Admin/DeleteCart
+        [HttpPost]
+        public async Task<IActionResult> DeleteCart(List<int> selectedIds)
+        {
+            if (selectedIds != null && selectedIds.Any())
+            {
+                var items = await _context.CartItems
+                    .Where(c => selectedIds.Contains(c.Id))
+                    .ToListAsync();
+                _context.CartItems.RemoveRange(items);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction("IndexCart");
+        }
 
 
     }

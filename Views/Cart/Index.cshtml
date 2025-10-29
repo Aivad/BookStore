@@ -1,0 +1,18 @@
+﻿@{
+    ViewData["Title"] = "Your Cart";
+    Layout = "_Layout";
+}
+
+<h2>Your Cart</h2>
+
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> This is a placeholder. Items will appear here when you add books to cart.
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <p class="card-text">No items in cart.</p>
+    </div>
+</div>
+
+<a asp-controller="Home" asp-action="Index" class="btn btn-secondary mt-3">Continue Shopping</a>

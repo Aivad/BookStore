@@ -3,6 +3,7 @@ using BookStore.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace BookStore.Controllers
 {
@@ -16,44 +17,89 @@ namespace BookStore.Controllers
             _context = context;
         }
 
-
-        //Menambahkan buku ke cart
-        public async Task<IActionResult> AddToCart(int bookId)
+        // GET: /Cart
+        public async Task<IActionResult> Index()
         {
-            var userId = User.Identity?.Name; // ID menggunakan email
-            if (string.IsNullOrEmpty(userId)) return Unauthorized();
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var cartItems = await _context.CartItems
+                .Include(c => c.Book)
+                .Where(c => c.UserId == userId)
+                .ToListAsync();
 
-            var cartItem = await _context.CartItems
-                .FirstOrDefaultAsync(c => c.BookId == bookId && c.UserId == userId);
+            return View(cartItems);
+        }
 
-            if (cartItem != null)
+        // POST: /Cart/Add
+        [HttpPost]
+        public async Task<IActionResult> Add(int bookId, int quantity = 1)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var book = await _context.Books.FindAsync(bookId);
+            if (book == null || book.Stock < quantity)
             {
-                cartItem.Quantity++;
+                TempData["Error"] = "Book not available or insufficient stock.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            var existingItem = await _context.CartItems
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.BookId == bookId);
+
+            if (existingItem != null)
+            {
+                existingItem.Quantity += quantity;
+                if (existingItem.Quantity > book.Stock) existingItem.Quantity = book.Stock;
+                _context.Update(existingItem);
             }
             else
             {
                 _context.CartItems.Add(new Cart
                 {
-                    BookId = bookId,
                     UserId = userId,
-                    Quantity = 1
+                    BookId = bookId,
+                    Quantity = quantity
                 });
             }
 
             await _context.SaveChangesAsync();
-            return RedirectToAction("Index", "Book");
+            return RedirectToAction("Index");
         }
 
-
-        // Menampilkan isi cart
-        public async Task<IActionResult> Index()
+        // POST: /Cart/Update
+        [HttpPost]
+        public async Task<IActionResult> Update(int id, int quantity)
         {
-            var userId = User.Identity?.Name;
-            var cart = await _context.CartItems
-                .Where(c => c.UserId == userId)
-                .Include(c => c.Book)
-                .ToListAsync();
-            return View(cart);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var item = await _context.CartItems.FindAsync(id);
+
+            if (item == null || item.UserId != userId)
+                return NotFound();
+
+            var book = await _context.Books.FindAsync(item.BookId);
+            if (book != null && quantity <= book.Stock && quantity > 0)
+            {
+                item.Quantity = quantity;
+                _context.Update(item);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        // POST: /Cart/Remove
+        [HttpPost]
+        public async Task<IActionResult> Remove(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var item = await _context.CartItems
+                .FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
+
+            if (item != null)
+            {
+                _context.CartItems.Remove(item);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction("Index");
         }
     }
 }

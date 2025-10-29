@@ -2,6 +2,7 @@
 using BookStore.Data.Seed;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +25,14 @@ builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
+// Ensure uploads directory exists
+var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+if (!Directory.Exists(uploadsPath))
+{
+    Directory.CreateDirectory(uploadsPath);
+    Console.WriteLine($"Created uploads folder at: {uploadsPath}");
+}
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -31,7 +40,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+app.UseStaticFiles(); //Serves files from wwwroot (including /uploads)
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();

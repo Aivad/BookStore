@@ -48,17 +48,18 @@
                                 <p class="h5 text-success">Rp @book.Price.ToString("N0")</p>
 
                                 <div class="d-grid gap-2">
-                                    <a asp-action="Details" asp-route-id="@book.Id"
-                                       class="btn btn-outline-primary">Lihat Detail</a>
+                                    <a asp-action="Details" asp-route-id="@book.Id" class="btn btn-outline-primary">Lihat Detail</a>
                                     @if (User.Identity?.IsAuthenticated == true)
                                     {
-                                        <a asp-controller="Cart" asp-action="AddToCart" asp-route-bookId="@book.Id"
-                                           class="btn btn-success">Tambah ke Keranjang</a>
+                                        <form asp-controller="Cart" asp-action="Add" method="post">
+                                            <input type="hidden" name="bookId" value="@book.Id" />
+                                            <input type="hidden" name="quantity" value="1" />
+                                            <button type="submit" class="btn btn-success w-100">Tambah ke Keranjang</button>
+                                        </form>
                                     }
                                     else
                                     {
-                                        <a asp-area="Identity" asp-page="/Account/Login"
-                                           class="btn btn-success">Login untuk Beli</a>
+                                        <a asp-area="Views" asp-page="/Account/Login" class="btn btn-success">Login untuk Beli</a>
                                     }
                                 </div>
                             </div>

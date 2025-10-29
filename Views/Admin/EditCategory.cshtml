@@ -21,4 +21,18 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // Show upload progress
+        document.querySelector('form').addEventListener('submit', function(e) {
+            const fileInput = document.querySelector('input[name="imageFile"]');
+            if (fileInput.files.length > 0) {
+                document.getElementById('uploadStatus').style.display = 'block';
+                // Simulate upload progress (real progress requires AJAX)
+                setTimeout(() => {
+                    document.getElementById('uploadStatus').textContent = 'Upload complete!';
+                }, 1000);
+            }
+        });
+    </script>
 }

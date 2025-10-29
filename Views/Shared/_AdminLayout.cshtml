@@ -94,6 +94,13 @@
                                 Categories
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "IndexCart" ? "active" : "")"
+                               asp-controller="Admin" asp-action="IndexCart">
+                                <span data-feather="shopping-cart"></span>
+                                Carts
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </nav>

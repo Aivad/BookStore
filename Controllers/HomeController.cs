@@ -18,8 +18,8 @@ namespace BookStore.Controllers
             }
             else
             {
-                // Belum login → arahkan ke halaman Login Identity
-                return RedirectToAction("Login", "Account");
+                // User Belum login → tetap tampilkan daftar buku
+                return RedirectToAction("Index", "Book");
             }
         }
 

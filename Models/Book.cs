@@ -29,7 +29,7 @@ namespace BookStore.Models
 
         [Required]
         [MaxLength(512)]
-        public string? ImageUrl { get; set; }
+        public string? ImageUrl { get; set; } = "/images/no_image_available.jpg";
 
         [ForeignKey("Category")]
         public int CategoryId { get; set; }
