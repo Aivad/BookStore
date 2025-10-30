@@ -101,6 +101,27 @@
                                 Carts
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "IndexPaymentMethod" ? "active" : "")"
+                               asp-controller="Admin" asp-action="IndexPaymentMethod">
+                                <span data-feather="credit-card"></span>
+                                Payment Methods
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "IndexOrder" ? "active" : "")"
+                               asp-controller="Admin" asp-action="IndexOrder">
+                                <span data-feather="shopping-bag"></span>
+                                Orders
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "IndexContact" ? "active" : "")"
+                               asp-controller="Admin" asp-action="IndexContact">
+                                <span data-feather="message-square"></span>
+                                Messages
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </nav>

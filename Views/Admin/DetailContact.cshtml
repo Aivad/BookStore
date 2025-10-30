@@ -1,0 +1,34 @@
+﻿@model BookStore.Models.Contact
+@{
+    ViewData["Title"] = $"Message from {Model.Name}";
+    Layout = "_AdminLayout";
+}
+
+<h2>Message Details</h2>
+
+<div class="card">
+    <div class="card-header">
+        <h5>From: @Model.Name</h5>
+        <small>Sent on: @Model.SentAt.ToString("dd MMM yyyy HH:mm")</small>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <label class="form-label">Email</label>
+            <p><a href="mailto:@Model.Email">@Model.Email</a></p>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Message</label>
+            <div class="border p-3 rounded bg-light">
+                @Model.Message
+            </div>
+        </div>
+        <form asp-action="DeleteContact" asp-route-id="@Model.Id" method="post" class="d-inline">
+            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure?')">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </form>
+    </div>
+    <div class="card-footer">
+        <a asp-action="IndexContact" class="btn btn-secondary">Back to Messages</a>
+    </div>
+</div>

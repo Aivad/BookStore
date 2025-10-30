@@ -1,0 +1,58 @@
+﻿@model BookStore.Models.Contact
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Send Us a Message";
+}
+
+<div class="container mt-4">
+    <h2>✉️ Send Us Feedback</h2>
+    <p>Kami ingin sekali mendengar dari Anda! Sampaikan pendapat, saran, atau masalah Anda.</p>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    <form asp-action="Index" method="post">
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label">Your Name</label>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <input asp-for="Name" class="form-control" readonly />
+                <input type="hidden" asp-for="Name" />
+                <small class="form-text text-muted">Logged in as: @User.Identity.Name</small>
+            }
+            else
+            {
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            }
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Email" class="form-label">Email Address</label>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <input asp-for="Email" class="form-control" readonly />
+                <input type="hidden" asp-for="Email" />
+            }
+            else
+            {
+                <input asp-for="Email" class="form-control" type="email" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            }
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Message" class="form-label">Your Message</label>
+            <textarea asp-for="Message" class="form-control" rows="8" placeholder="Type your feedback here..."></textarea>
+            <span asp-validation-for="Message" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Send Message</button>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

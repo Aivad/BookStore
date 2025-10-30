@@ -1,0 +1,22 @@
+﻿@model BookStore.Models.PaymentMethod
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Create Payment Method";
+}
+
+<h2>Create Payment Method</h2>
+
+<form asp-action="CreatePaymentMethod" method="post">
+    <div class="mb-3">
+        <label asp-for="Name" class="form-label">Payment Method Name <span class="text-danger">*</span></label>
+        <input asp-for="Name" class="form-control" />
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="IndexPaymentMethod" class="btn btn-secondary">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

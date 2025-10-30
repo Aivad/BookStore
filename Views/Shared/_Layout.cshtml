@@ -25,7 +25,7 @@
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Contact" asp-action="Index">Contact</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="About">About</a>
@@ -36,6 +36,10 @@
                     <ul class="navbar-nav ms-auto">
                         @if (User.Identity.IsAuthenticated)
                         {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Order" asp-action="MyOrders">My Orders</a>
+                            </li>
+
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-controller="Cart" asp-action="Index">
                                     <i class="bi bi-cart"></i>
@@ -68,7 +72,12 @@
                             @if (roles.Contains("Admin"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-controller="Admin" asp-action="Dashboard">Admin Panel</a>
+                                    <form asp-controller="Admin" asp-action="Dashboard" method="post" class="d-inline">
+                                        <button class="btn btn-info btn-sm me-2">
+                                            <span data-feather="users"></span> 
+                                            Admin Panel
+                                        </button>
+                                    </form>
                                 </li>
                             }
 
@@ -104,7 +113,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2025 - BookStore - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2025 - BookStore - <a asp-area="" asp-controller="Home" asp-action="About">About</a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

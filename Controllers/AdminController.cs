@@ -22,6 +22,8 @@ namespace BookStore.Controllers
 
         public IActionResult Dashboard() => View();
 
+        #region User Management
+
         // GET: /Admin/IndexUser
         public async Task<IActionResult> IndexUser(int page = 1)
         {
@@ -223,8 +225,9 @@ namespace BookStore.Controllers
                 return View("EditUser", model);
             }
         }
+        #endregion
 
-
+        #region Category Mangement
         // GET: /Admin/IndexCategory
         public async Task<IActionResult> IndexCategory(int page = 1)
         {
@@ -313,9 +316,9 @@ namespace BookStore.Controllers
                 return View(model);
             }
         }
+        #endregion
 
-
-
+        #region Book Management
         // GET: /Admin/IndexBook
         public async Task<IActionResult> IndexBook(int page = 1)
         {
@@ -496,6 +499,10 @@ namespace BookStore.Controllers
             }
         }
 
+        #endregion
+
+        #region Cart Management
+
         // GET: /Admin/IndexCart
         public async Task<IActionResult> IndexCart(int page = 1)
         {
@@ -581,6 +588,166 @@ namespace BookStore.Controllers
             return RedirectToAction("IndexCart");
         }
 
+        #endregion
+
+        #region Payment Method Management
+
+        // GET: /Admin/IndexPaymentMethod
+        public async Task<IActionResult> IndexPaymentMethod()
+        {
+            var methods = await _context.PaymentMethods.ToListAsync();
+            return View(methods);
+        }
+
+        // GET: /Admin/CreatePaymentMethod
+        public IActionResult CreatePaymentMethod() => View();
+
+        // POST: /Admin/CreatePaymentMethod
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreatePaymentMethod(PaymentMethod model)
+        {
+            if (ModelState.IsValid)
+            {
+                _context.PaymentMethods.Add(model);
+                await _context.SaveChangesAsync();
+                return RedirectToAction("IndexPaymentMethod");
+            }
+            return View(model);
+        }
+
+        // GET: /Admin/EditPaymentMethod/1
+        public async Task<IActionResult> EditPaymentMethod(int id)
+        {
+            var method = await _context.PaymentMethods.FindAsync(id);
+            if (method == null) return NotFound();
+            return View(method);
+        }
+
+        // POST: /Admin/EditPaymentMethod/1
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditPaymentMethod(int id, PaymentMethod model)
+        {
+            if (id != model.Id) return BadRequest();
+            if (ModelState.IsValid)
+            {
+                _context.Update(model);
+                await _context.SaveChangesAsync();
+                return RedirectToAction("IndexPaymentMethod");
+            }
+            return View(model);
+        }
+
+        // POST: /Admin/DeletePaymentMethod
+        [HttpPost]
+        public async Task<IActionResult> DeletePaymentMethod(int id)
+        {
+            var method = await _context.PaymentMethods.FindAsync(id);
+            if (method != null)
+            {
+                _context.PaymentMethods.Remove(method);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction("IndexPaymentMethod");
+        }
+
+        #endregion
+
+        #region Order Management
+
+        // GET: /Admin/IndexOrder
+        public async Task<IActionResult> IndexOrder(int page = 1)
+        {
+            const int pageSize = 10;
+            var orders = await _context.Orders
+                .Include(o => o.User)
+                .Include(o => o.PaymentMethod)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewBag.Page = page;
+            ViewBag.TotalPages = (int)Math.Ceiling((double)orders.Count / pageSize);
+            return View(orders);
+        }
+
+        // GET: /Admin/DetailOrder/1
+        public async Task<IActionResult> DetailOrder(int id)
+        {
+            var order = await _context.Orders
+                .Include(o => o.User)
+                .Include(o => o.PaymentMethod)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(oi => oi.Book)
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (order == null) return NotFound();
+            return View(order);
+        }
+
+        // POST: /Admin/UpdateOrderStatus
+        [HttpPost]
+        public async Task<IActionResult> UpdateOrderStatus(int orderId, string status)
+        {
+            var order = await _context.Orders.FindAsync(orderId);
+            if (order != null)
+            {
+                order.Status = status;
+                _context.Update(order);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction("DetailOrder", new { id = orderId });
+        }
+
+        #endregion
+
+        #region Contact Message Management
+
+        // GET: /Admin/IndexContact
+        public async Task<IActionResult> IndexContact(int page = 1)
+        {
+            const int pageSize = 10;
+            var totalMessages = await _context.ContactMessages.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalMessages / (double)pageSize);
+
+            var messages = await _context.ContactMessages
+                .OrderByDescending(m => m.SentAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewBag.Page = page;
+            ViewBag.TotalPages = totalPages;
+
+            return View(messages);
+        }
+
+        // GET: /Admin/DetailContact/5
+        public async Task<IActionResult> DetailContact(int id)
+        {
+            var message = await _context.ContactMessages.FindAsync(id);
+            if (message == null)
+                return NotFound();
+
+            return View(message);
+        }
+
+        // POST: /Admin/DeleteContact/id
+        [HttpPost]
+        public async Task<IActionResult> DeleteContact(int id)
+        {
+            var msg = await _context.ContactMessages.FindAsync(id);
+            if (msg != null)
+            {
+                _context.ContactMessages.Remove(msg);
+                await _context.SaveChangesAsync();
+            }
+            return RedirectToAction("IndexContact");
+        }
+
+
+        #endregion
 
     }
 }

@@ -40,13 +40,23 @@ namespace BookStore.Controllers
         public async Task<IActionResult> Search(string query)
         {
             if (string.IsNullOrWhiteSpace(query))
-                return RedirectToAction("Index");
+            {
+                // Jika tidak ada yang di query/cari di show all
+                var Filteredbooks = await _context.Books
+                    .Include(b => b.Category)
+                    .ToListAsync();
+
+                ViewBag.SearchQuery = "";
+                return View("Index", Filteredbooks);
+            }
 
             var books = await _context.Books
                 .Include(b => b.Category)
-                .Where(b => b.Title.Contains(query) || b.Author.Contains(query))
+                .Where(b => b.Title.ToLower().Contains(query.ToLower()) || b.Author.ToLower().Contains(query.ToLower()))
                 .ToListAsync();
-            return View("SearchResults", books);
+
+            ViewBag.SearchQuery = query; // Repopulate search box
+            return View("Index", books);
         }
 
         // Detail buku

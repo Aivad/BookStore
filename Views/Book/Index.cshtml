@@ -10,9 +10,28 @@
 
         <!-- Form Pencarian -->
         <form asp-controller="Book" asp-action="Search" method="get" class="d-flex">
-            <input type="text" name="query" class="form-control me-2" placeholder="Cari buku atau penulis..." />
+            <input type="text" name="query" class="form-control me-2"
+                   placeholder="Cari buku atau penulis..."
+                   value="@ViewBag.SearchQuery" />
             <button type="submit" class="btn btn-outline-primary">Cari</button>
         </form>
+
+        @if (Model == null || !Model.Any())
+        {
+            @if (!string.IsNullOrEmpty(ViewBag.SearchQuery))
+            {
+                <div class="alert alert-info">
+                    Tidak ditemukan buku dengan kata kunci: "<strong>@ViewBag.SearchQuery</strong>"
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning">
+                    Belum ada buku tersedia. Silahkan hubungi admin.
+                </div>
+            }
+        }
+
     </div>
 
     @if (Model == null || !Model.Any())

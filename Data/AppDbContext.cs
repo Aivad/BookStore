@@ -75,6 +75,11 @@ namespace BookStore.Data
                 .HasOne(o => o.PaymentMethod)
                 .WithMany()
                 .HasForeignKey(o => o.PaymentMethodId);
+
+            modelBuilder.Entity<Order>()
+                .HasMany(o => o.OrderItems)
+                .WithOne(oi => oi.Order)
+                .HasForeignKey(oi => oi.OrderId);
         }
     }
 }
