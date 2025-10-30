@@ -1,96 +1,123 @@
-﻿//using BookStore.Data;
-//using Microsoft.AspNetCore.Authorization;
-//using Microsoft.AspNetCore.Mvc;
-//using System.Security.Claims;
+﻿using BookStore.Models;
+using BookStore.Data;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 
-//[Authorize]
-//public class OrderController : Controller
-//{
-//    private readonly AppDbContext _context;
+[Authorize]
+public class OrderController : Controller
+{
+    private readonly AppDbContext _context;
 
-//    public OrderController(AppDbContext context)
-//    {
-//        _context = context;
-//    }
+    public OrderController(AppDbContext context)
+    {
+        _context = context;
+    }
 
-//    // GET: /Order/Checkout
-//    public async Task<IActionResult> Checkout()
-//    {
-//        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-//        var cartItems = await _context.CartItems
-//            .Include(c => c.Book)
-//            .Where(c => c.UserId == userId)
-//            .ToListAsync();
+    // GET: /Order/Checkout
+    public async Task<IActionResult> Checkout()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var cartItems = await _context.CartItems
+            .Include(c => c.Book)
+            .Where(c => c.UserId == userId)
+            .ToListAsync();
 
-//        if (!cartItems.Any())
-//            return RedirectToAction("Index", "Cart");
+        if (!cartItems.Any())
+            return RedirectToAction("Index", "Cart");
 
-//        var paymentMethods = await _context.PaymentMethods.ToListAsync();
-//        ViewBag.PaymentMethods = paymentMethods;
+        var paymentMethods = await _context.PaymentMethods.ToListAsync();
+        ViewBag.PaymentMethods = paymentMethods;
 
-//        return View(cartItems);
-//    }
+        return View(cartItems);
+    }
 
-//    // POST: /Order/PlaceOrder
-//    [HttpPost]
-//    [ValidateAntiForgeryToken]
-//    public async Task<IActionResult> PlaceOrder(int paymentMethodId)
-//    {
-//        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-//        var cartItems = await _context.CartItems
-//            .Include(c => c.Book)
-//            .Where(c => c.UserId == userId)
-//            .ToListAsync();
+    // POST: /Order/PlaceOrder
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PlaceOrder(int paymentMethodId)
+    {
+        var validPaymentMethod = await _context.PaymentMethods.FindAsync(paymentMethodId);
+        if (validPaymentMethod == null)
+        {
+            TempData["Error"] = "Invalid payment method selected.";
+            return RedirectToAction("Checkout");
+        }
 
-//        if (!cartItems.Any())
-//            return RedirectToAction("Index", "Cart");
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var cartItems = await _context.CartItems
+            .Include(c => c.Book)
+            .Where(c => c.UserId == userId)
+            .ToListAsync();
 
-//        // Create order
-//        var order = new Order
-//        {
-//            UserId = userId,
-//            PaymentMethodId = paymentMethodId,
-//            TotalAmount = cartItems.Sum(i => i.Book.Price * i.Quantity),
-//            Status = "Pending"
-//        };
+        if (!cartItems.Any())
+            return RedirectToAction("Index", "Cart");
 
-//        _context.Orders.Add(order);
-//        await _context.SaveChangesAsync();
+        // Create order
+        var order = new Order
+        {
+            UserId = userId,
+            PaymentMethodId = paymentMethodId,
+            TotalAmount = cartItems.Sum(i => i.Book.Price * i.Quantity),
+            Status = "Pending"
+        };
 
-//        // Create order items
-//        foreach (var item in cartItems)
-//        {
-//            _context.OrderItems.Add(new OrderItem
-//            {
-//                OrderId = order.Id,
-//                BookId = item.BookId,
-//                Quantity = item.Quantity,
-//                PriceAtPurchase = item.Book.Price
-//            });
+        _context.Orders.Add(order);
+        await _context.SaveChangesAsync();
 
-//            // Reduce stock
-//            item.Book.Stock -= item.Quantity;
-//            _context.Update(item.Book);
-//        }
+        // Create order items
+        foreach (var item in cartItems)
+        {
+            _context.OrderItems.Add(new ItemOrder
+            {
+                OrderId = order.Id,
+                BookId = item.BookId,
+                Quantity = item.Quantity,
+                PriceAtPurchase = item.Book.Price
+            });
 
-//        // Clear cart
-//        _context.CartItems.RemoveRange(cartItems);
-//        await _context.SaveChangesAsync();
+            // Reduce stock
+            item.Book.Stock -= item.Quantity;
+            _context.Update(item.Book);
+        }
 
-//        TempData["Success"] = "Order placed successfully!";
-//        return RedirectToAction("OrderDetails", new { id = order.Id });
-//    }
+        // Clear cart
+        _context.CartItems.RemoveRange(cartItems);
+        await _context.SaveChangesAsync();
 
-//    // GET: /Order/OrderDetails/5
-//    public async Task<IActionResult> OrderDetails(int id)
-//    {
-//        var order = await _context.Orders
-//            .Include(o => o.PaymentMethod)
-//            .Include(o => o.OrderItems)
-//                .ThenInclude(oi => oi.Book)
-//            .FirstOrDefaultAsync(o => o.Id == id && o.UserId == User.FindFirstValue(ClaimTypes.NameIdentifier));
+        TempData["Success"] = "Order placed successfully!";
+        return RedirectToAction("OrderDetail","Order", new { id = order.Id });
+    }
 
-//        if (order == null) return NotFound();
-//        return View(order);
-//    }
-//}
+    // GET: /Order/OrderDetails/id
+    public async Task<IActionResult> OrderDetail(int id)
+    {
+        var order = await _context.Orders
+            .Include(o => o.PaymentMethod)
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Book)
+            .FirstOrDefaultAsync(o => o.Id == id && o.UserId == User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+        if (order == null) return NotFound();
+
+        return View("OrderDetail", order);
+    }
+
+    // GET: /Order/MyOrders
+    public async Task<IActionResult> MyOrders()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var orders = await _context.Orders
+            .Include(o => o.PaymentMethod)
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Book)
+            .Where(o => o.UserId == userId)
+            .OrderByDescending(o => o.Id)
+            .ToListAsync();
+
+        return View(orders);
+    }
+
+
+}

@@ -1,0 +1,27 @@
+﻿@model BookStore.Models.Order
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Order Details";
+}
+
+<h2>Order #@Model.Id</h2>
+<p>Status: <strong>@Model.Status</strong></p>
+<p>Payment: @Model.PaymentMethod?.Name</p>
+<p>Total: Rp @Model.TotalAmount.ToString("N0")</p>
+
+<h4>Items</h4>
+<table class="table">
+    <thead><tr><th>Book</th><th>Price</th><th>Qty</th></tr></thead>
+    <tbody>
+        @foreach (var item in Model.OrderItems)
+        {
+            <tr>
+                <td>@item.Book.Title</td>
+                <td>Rp @item.PriceAtPurchase.ToString("N0")</td>
+                <td>@item.Quantity</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-controller="Home" asp-action="Index" class="btn btn-secondary">Continue Shopping</a>
