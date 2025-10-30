@@ -50,17 +50,26 @@
     </div>
 </div>
 
-<div class="d-flex justify-content-between">
+<div class="card-footer d-flex justify-content-between align-items-center">
     <a asp-action="IndexOrder" class="btn btn-secondary">← Back to Orders</a>
 
-    <!-- Status Update Form -->
-    <form asp-action="UpdateOrderStatus" method="post" class="d-inline">
-        <input type="hidden" name="orderId" value="@Model.Id" />
-        <select name="status" class="form-select d-inline" style="width: auto; display: inline-block;" onchange="this.form.submit()">
-            <option value="Pending" selected="@(Model.Status == "Pending")">Pending</option>
-            <option value="Confirmed" selected="@(Model.Status == "Confirmed")">Confirmed</option>
-            <option value="Shipped" selected="@(Model.Status == "Shipped")">Shipped</option>
-            <option value="Delivered" selected="@(Model.Status == "Delivered")">Delivered</option>
-        </select>
-    </form>
+    <div class="d-flex gap-2">
+        <form asp-action="UpdateOrderStatus" method="post" class="d-inline">
+            <input type="hidden" name="orderId" value="@Model.Id" />
+            <select name="status" class="form-select d-inline" style="width: auto;" onchange="this.form.submit()">
+                <option value="Pending" selected="@(Model.Status == "Pending")">Pending</option>
+                <option value="Confirmed" selected="@(Model.Status == "Confirmed")">Confirmed</option>
+                <option value="Shipped" selected="@(Model.Status == "Shipped")">Shipped</option>
+                <option value="Delivered" selected="@(Model.Status == "Delivered")">Delivered</option>
+            </select>
+        </form>
+
+        <form asp-action="DeleteOrder" method="post" class="d-inline">
+            <input type="hidden" name="id" value="@Model.Id" />
+            <button type="submit" class="btn btn-danger"
+                    onclick="return confirm('Apakah anda yakin ingin menghapus Order ini?');">
+                <i class="bi bi-trash"></i> Delete Order
+            </button>
+        </form>
+    </div>
 </div>

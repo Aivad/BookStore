@@ -1,0 +1,45 @@
+﻿@model BookStore.Models.Book
+@{
+    ViewData["Title"] = $"Book Details: {Model.Title}";
+    Layout = "_AdminLayout";
+}
+
+<h2>Book Details</h2>
+
+<div class="card">
+    <div class="card-header">
+        <h5>@Model.Title</h5>
+        <small>by @Model.Author</small>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <img src="@Model.ImageUrl" alt="@Model.Title" class="img-fluid rounded" />
+            </div>
+            <div class="col-md-8">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Category</label>
+                    <p>@Model.Category?.Name</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Price</label>
+                    <p>Rp @Model.Price.ToString("N0", new System.Globalization.CultureInfo("id-ID"))</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Stock</label>
+                    <p>@Model.Stock</p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Description</label>
+                    <div class="border p-3 rounded bg-light">
+                        @Model.Description
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-footer">
+        <a asp-action="IndexBook" class="btn btn-secondary">Back to Books</a>
+        <a asp-action="EditBook" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+    </div>
+</div>

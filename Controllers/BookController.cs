@@ -60,7 +60,7 @@ namespace BookStore.Controllers
         }
 
         // Detail buku
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Detail(int? id)
         {
             if (id == null) return NotFound();
             var book = await _context.Books.FindAsync(id);

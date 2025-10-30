@@ -2,18 +2,34 @@
 @{
     ViewData["Title"] = "Manage Users";
     Layout = "_AdminLayout";
-    var currentPage = ViewBag.Page;
-    var totalPages = ViewBag.TotalPages;
+    var currentPage = (int)ViewBag.Page;
+    var totalPages = (int)ViewBag.TotalPages;
+    var searchQuery = ViewBag.SearchQuery?.ToString() ?? "";
 }
 
 <h2>Manage Users</h2>
 
+<!-- Search Form -->
+<form asp-action="IndexUser" method="get" class="d-flex mb-3">
+    <input type="text" name="query" class="form-control me-2"
+           placeholder="Username atau email..."
+           value="@searchQuery" />
+    <button type="submit" class="btn btn-outline-primary">Search</button>
+    @if (!string.IsNullOrEmpty(searchQuery))
+    {
+        <a asp-action="IndexUser" class="btn btn-outline-secondary ms-2">Clear</a>
+    }
+</form>
+
+<!-- Delete Form (termasuk seluruh table) -->
 <form asp-action="DeleteUsers" method="post" id="deleteForm">
     <div class="d-flex justify-content-between mb-3">
         <a asp-action="CreateUser" class="btn btn-success">
             <i class="bi bi-plus"></i> Create New User
         </a>
-        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete selected users?');">
+
+        <button type="submit" class="btn btn-danger"
+                onclick="return confirm('Apakah anda yakin unutuk menghapus User terkait?');">
             Delete Selected
         </button>
     </div>
@@ -33,7 +49,6 @@
                 @foreach (var user in Model)
                 {
                     var role = user.UserRoles?.FirstOrDefault()?.Role?.Name ?? "User";
-
                     <tr>
                         <td><input type="checkbox" name="selectedIds" value="@user.Id" /></td>
                         <td>@user.UserName</td>
@@ -52,30 +67,40 @@
             </tbody>
         </table>
     </div>
-
-    <nav>
-        <ul class="pagination mb-0">
-            @if (currentPage > 1)
-            {
-                <li class="page-item">
-                    <a class="page-link" asp-action="IndexUser" asp-route-page="@(currentPage - 1)">Previous</a>
-                </li>
-            }
-            @for (int i = 1; i <= totalPages; i++)
-            {
-                <li class="page-item @(i == currentPage ? "active" : "")">
-                    <a class="page-link" asp-action="IndexUser" asp-route-page="@i">@i</a>
-                </li>
-            }
-            @if (currentPage < totalPages)
-            {
-                <li class="page-item">
-                    <a class="page-link" asp-action="IndexUser" asp-route-page="@(currentPage + 1)">Next</a>
-                </li>
-            }
-        </ul>
-    </nav>
 </form>
+
+<!-- Pagination -->
+<nav>
+    <ul class="pagination mb-0">
+        @if (currentPage > 1)
+        {
+            <li class="page-item">
+                <a class="page-link"
+                   asp-action="IndexUser"
+                   asp-route-page="@(currentPage - 1)"
+                   asp-route-query="@searchQuery">Previous</a>
+            </li>
+        }
+        @for (int i = 1; i <= totalPages; i++)
+        {
+            <li class="page-item @(i == currentPage ? "active" : "")">
+                <a class="page-link"
+                   asp-action="IndexUser"
+                   asp-route-page="@i"
+                   asp-route-query="@searchQuery">@i</a>
+            </li>
+        }
+        @if (currentPage < totalPages)
+        {
+            <li class="page-item">
+                <a class="page-link"
+                   asp-action="IndexUser"
+                   asp-route-page="@(currentPage + 1)"
+                   asp-route-query="@searchQuery">Next</a>
+            </li>
+        }
+    </ul>
+</nav>
 
 @section Scripts {
     <script>

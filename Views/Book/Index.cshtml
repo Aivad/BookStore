@@ -67,7 +67,7 @@
                                 <p class="h5 text-success">Rp @book.Price.ToString("N0")</p>
 
                                 <div class="d-grid gap-2">
-                                    <a asp-action="Details" asp-route-id="@book.Id" class="btn btn-outline-primary">Lihat Detail</a>
+                                    <a asp-action="Detail" asp-route-id="@book.Id" class="btn btn-outline-primary">Lihat Detail</a>
                                     @if (User.Identity?.IsAuthenticated == true)
                                     {
                                         <form asp-controller="Cart" asp-action="Add" method="post">

@@ -2,18 +2,33 @@
 @{
     ViewData["Title"] = "Manage Categories";
     Layout = "_AdminLayout";
-    var currentPage = ViewBag.Page;
-    var totalPages = ViewBag.TotalPages;
+    var currentPage = (int)ViewBag.Page;
+    var totalPages = (int)ViewBag.TotalPages;
+    var searchQuery = ViewBag.SearchQuery?.ToString() ?? "";
 }
 
 <h2>Manage Categories</h2>
 
+<!--Search Form -->
+<form asp-action="IndexCategory" method="get" class="d-flex mb-3">
+    <input type="text" name="query" class="form-control me-2"
+           placeholder="Category..."
+           value="@searchQuery" />
+    <button type="submit" class="btn btn-outline-primary">Search</button>
+    @if (!string.IsNullOrEmpty(searchQuery))
+    {
+        <a asp-action="IndexCategory" class="btn btn-outline-secondary ms-2">Clear</a>
+    }
+</form>
+
+<!--Delete Form -->
 <form asp-action="DeleteCategories" method="post" id="deleteForm">
     <div class="d-flex justify-content-between mb-3">
         <a asp-action="CreateCategory" class="btn btn-success">
             <i class="bi bi-plus"></i> Create New Category
         </a>
-        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete selected categories?');">
+        <button type="submit" class="btn btn-danger"
+                onclick="return confirm('Are you sure you want to delete selected categories?');">
             Delete Selected
         </button>
     </div>
@@ -28,45 +43,73 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var category in Model)
+                @if (!Model.Any())
                 {
                     <tr>
-                        <td><input type="checkbox" name="selectedIds" value="@category.Id" /></td>
-                        <td>@category.Name</td>
-                        <td>
-                            <a asp-action="EditCategory" asp-route-id="@category.Id" class="btn btn-warning btn-sm">
-                                <i class="bi bi-pencil"></i> Edit
-                            </a>
+                        <td colspan="3" class="text-center">
+                            @if (!string.IsNullOrEmpty(searchQuery))
+                            {
+                                <span>Tidak ditemukan categories yang sesuai dengan "<strong>@searchQuery</strong>"</span>
+                            }
+                            else
+                            {
+                                <span>Categori tidak tersedia.</span>
+                            }
                         </td>
                     </tr>
+                }
+                else
+                {
+                    @foreach (var category in Model)
+                    {
+                        <tr>
+                            <td><input type="checkbox" name="selectedIds" value="@category.Id" /></td>
+                            <td>@category.Name</td>
+                            <td>
+                                <a asp-action="EditCategory" asp-route-id="@category.Id" class="btn btn-warning btn-sm">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </a>
+                            </td>
+                        </tr>
+                    }
                 }
             </tbody>
         </table>
     </div>
-
-    <nav>
-        <ul class="pagination mb-0">
-            @if (currentPage > 1)
-            {
-                <li class="page-item">
-                    <a class="page-link" asp-action="IndexCategory" asp-route-page="@(currentPage - 1)">Previous</a>
-                </li>
-            }
-            @for (int i = 1; i <= totalPages; i++)
-            {
-                <li class="page-item @(i == currentPage ? "active" : "")">
-                    <a class="page-link" asp-action="IndexCategory" asp-route-page="@i">@i</a>
-                </li>
-            }
-            @if (currentPage < totalPages)
-            {
-                <li class="page-item">
-                    <a class="page-link" asp-action="IndexCategory" asp-route-page="@(currentPage + 1)">Next</a>
-                </li>
-            }
-        </ul>
-    </nav>
 </form>
+
+<!--Pagination -->
+<nav>
+    <ul class="pagination mb-0">
+        @if (currentPage > 1)
+        {
+            <li class="page-item">
+                <a class="page-link"
+                   asp-action="IndexCategory"
+                   asp-route-page="@(currentPage - 1)"
+                   asp-route-query="@searchQuery">Previous</a>
+            </li>
+        }
+        @for (int i = 1; i <= totalPages; i++)
+        {
+            <li class="page-item @(i == currentPage ? "active" : "")">
+                <a class="page-link"
+                   asp-action="IndexCategory"
+                   asp-route-page="@i"
+                   asp-route-query="@searchQuery">@i</a>
+            </li>
+        }
+        @if (currentPage < totalPages)
+        {
+            <li class="page-item">
+                <a class="page-link"
+                   asp-action="IndexCategory"
+                   asp-route-page="@(currentPage + 1)"
+                   asp-route-query="@searchQuery">Next</a>
+            </li>
+        }
+    </ul>
+</nav>
 
 @section Scripts {
     <script>

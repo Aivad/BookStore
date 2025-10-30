@@ -25,21 +25,32 @@ namespace BookStore.Controllers
         #region User Management
 
         // GET: /Admin/IndexUser
-        public async Task<IActionResult> IndexUser(int page = 1)
+        public async Task<IActionResult> IndexUser(int page = 1, string query = "")
         {
             const int pageSize = 10;
-            var users = await _context.Users
+
+            var usersQuery = _context.Users.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                usersQuery = usersQuery.Where(u =>
+                    u.UserName.Contains(query) ||
+                    u.Email.Contains(query));
+            }
+
+            var totalUsers = await usersQuery.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalUsers / pageSize);
+
+            var users = await usersQuery
                 .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
+                .ThenInclude(ur => ur.Role)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
-            var totalUsers = await _context.Users.CountAsync();
-            var totalPages = (int)Math.Ceiling((double)totalUsers / pageSize);
-
             ViewBag.Page = page;
             ViewBag.TotalPages = totalPages;
+            ViewBag.SearchQuery = query;
 
             return View(users);
         }
@@ -229,19 +240,28 @@ namespace BookStore.Controllers
 
         #region Category Mangement
         // GET: /Admin/IndexCategory
-        public async Task<IActionResult> IndexCategory(int page = 1)
+        public async Task<IActionResult> IndexCategory(int page = 1, string query = "")
         {
             const int pageSize = 10;
-            var categories = await _context.Categories
+
+            var categoriesQuery = _context.Categories.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                categoriesQuery = categoriesQuery.Where(c => c.Name.Contains(query));
+            }
+
+            var totalCategories = await categoriesQuery.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalCategories / pageSize);
+
+            var categories = await categoriesQuery
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
-            var totalCategories = await _context.Categories.CountAsync();
-            var totalPages = (int)Math.Ceiling((double)totalCategories / pageSize);
-
             ViewBag.Page = page;
             ViewBag.TotalPages = totalPages;
+            ViewBag.SearchQuery = query;
 
             return View(categories);
         }
@@ -319,21 +339,33 @@ namespace BookStore.Controllers
         #endregion
 
         #region Book Management
+
         // GET: /Admin/IndexBook
-        public async Task<IActionResult> IndexBook(int page = 1)
+        public async Task<IActionResult> IndexBook(int page = 1, string query = "")
         {
             const int pageSize = 10;
-            var books = await _context.Books
-                .Include(b => b.Category)
+
+            var booksQuery = _context.Books.Include(b => b.Category).AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                booksQuery = booksQuery.Where(b =>
+                    b.Title.Contains(query) ||
+                    b.Author.Contains(query) ||
+                    (b.Category != null && b.Category.Name.Contains(query)));
+            }
+
+            var totalBooks = await booksQuery.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalBooks / pageSize);
+
+            var books = await booksQuery
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
-            var totalBooks = await _context.Books.CountAsync();
-            var totalPages = (int)Math.Ceiling((double)totalBooks / pageSize);
-
             ViewBag.Page = page;
             ViewBag.TotalPages = totalPages;
+            ViewBag.SearchQuery = query;
 
             return View(books);
         }
@@ -499,24 +531,51 @@ namespace BookStore.Controllers
             }
         }
 
+        // GET: /Admin/DetailBook/id
+        public async Task<IActionResult> DetailBook(int id)
+        {
+            var book = await _context.Books
+                .Include(b => b.Category)
+                .FirstOrDefaultAsync(b => b.Id == id);
+
+            if (book == null)
+                return NotFound();
+
+            return View(book);
+        }
+
         #endregion
 
         #region Cart Management
 
         // GET: /Admin/IndexCart
-        public async Task<IActionResult> IndexCart(int page = 1)
+        public async Task<IActionResult> IndexCart(int page = 1, string query = "")
         {
             const int pageSize = 10;
-            var cartItems = await _context.CartItems
+
+            var cartItemsQuery = _context.CartItems
                 .Include(c => c.User)
                 .Include(c => c.Book)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                cartItemsQuery = cartItemsQuery.Where(c =>
+                    (c.User != null && c.User.UserName.Contains(query)) ||
+                    (c.Book != null && (c.Book.Title.Contains(query) || c.Book.Author.Contains(query))));
+            }
+
+            var total = await cartItemsQuery.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)total / pageSize);
+
+            var cartItems = await cartItemsQuery
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
-            var total = await _context.CartItems.CountAsync();
             ViewBag.Page = page;
-            ViewBag.TotalPages = (int)Math.Ceiling((double)total / pageSize);
+            ViewBag.TotalPages = totalPages;
+            ViewBag.SearchQuery = query;
 
             return View(cartItems);
         }
@@ -534,18 +593,51 @@ namespace BookStore.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateCart(Cart model)
         {
+            // Fetch the book to check stock
+            var book = await _context.Books.FindAsync(model.BookId);
+            if (book == null)
+            {
+                ModelState.AddModelError("BookId", "Selected book does not exist.");
+                ViewData["Users"] = _context.Users.ToList();
+                ViewData["Books"] = _context.Books.ToList();
+                return View(model);
+            }
+            var duplicate = await _context.CartItems
+                .AnyAsync(c => c.UserId == model.UserId && c.BookId == model.BookId);
+
+            if (duplicate)
+            {
+                ModelState.AddModelError("", "This user already has this book in their cart.");
+                ViewData["Users"] = _context.Users.ToList();
+                ViewData["Books"] = _context.Books.ToList();
+                return View(model);
+            }
+
+            // Validate stock
+            if (model.Quantity > book.Stock)
+            {
+                ModelState.AddModelError("Quantity", $"Quantity cannot exceed available stock ({book.Stock}).");
+                ViewData["Users"] = _context.Users.ToList();
+                ViewData["Books"] = _context.Books.ToList();
+                return View(model);
+            }
+
             if (ModelState.IsValid)
             {
                 _context.CartItems.Add(model);
                 await _context.SaveChangesAsync();
+                TempData["Success"] = "Cart item added successfully.";
                 return RedirectToAction("IndexCart");
             }
+
+
+
             ViewData["Users"] = _context.Users.ToList();
             ViewData["Books"] = _context.Books.ToList();
             return View(model);
         }
 
-        // GET: /Admin/EditCart/5
+        // GET: /Admin/EditCart/id
         public async Task<IActionResult> EditCart(int id)
         {
             var item = await _context.CartItems.FindAsync(id);
@@ -562,12 +654,34 @@ namespace BookStore.Controllers
         {
             if (id != model.Id) return BadRequest();
 
+            var existingItem = await _context.CartItems
+                .Include(c => c.Book)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (existingItem == null)
+                return NotFound();
+
+            // Validasi stock
+            if (model.Quantity > existingItem.Book.Stock)
+            {
+                ModelState.AddModelError("Quantity", $"Quantity cannot exceed available stock ({existingItem.Book.Stock}).");
+                ViewData["Users"] = _context.Users.ToList();
+                ViewData["Books"] = _context.Books.ToList();
+                return View(model);
+            }
+
             if (ModelState.IsValid)
             {
-                _context.Update(model);
+                existingItem.UserId = model.UserId;
+                existingItem.BookId = model.BookId;
+                existingItem.Quantity = model.Quantity;
+
+                _context.Update(existingItem);
                 await _context.SaveChangesAsync();
+                TempData["Success"] = "Cart item updated successfully.";
                 return RedirectToAction("IndexCart");
             }
+
             ViewData["Users"] = _context.Users.ToList();
             ViewData["Books"] = _context.Books.ToList();
             return View(model);
@@ -593,9 +707,29 @@ namespace BookStore.Controllers
         #region Payment Method Management
 
         // GET: /Admin/IndexPaymentMethod
-        public async Task<IActionResult> IndexPaymentMethod()
+        public async Task<IActionResult> IndexPaymentMethod(int page = 1, string query = "")
         {
-            var methods = await _context.PaymentMethods.ToListAsync();
+            const int pageSize = 10;
+
+            var methodsQuery = _context.PaymentMethods.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                methodsQuery = methodsQuery.Where(p => p.Name.Contains(query));
+            }
+
+            var totalMethods = await methodsQuery.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalMethods / pageSize);
+
+            var methods = await methodsQuery
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            ViewBag.Page = page;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.SearchQuery = query;
+
             return View(methods);
         }
 
@@ -657,18 +791,39 @@ namespace BookStore.Controllers
         #region Order Management
 
         // GET: /Admin/IndexOrder
-        public async Task<IActionResult> IndexOrder(int page = 1)
+        public async Task<IActionResult> IndexOrder(int page = 1, string query = "")
         {
             const int pageSize = 10;
-            var orders = await _context.Orders
+
+            var ordersQuery = _context.Orders
                 .Include(o => o.User)
                 .Include(o => o.PaymentMethod)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                // Remove '#' if user types "#123"
+                var cleanQuery = query.TrimStart('#');
+
+                ordersQuery = ordersQuery.Where(o =>
+                    o.Id.ToString().Contains(cleanQuery) ||
+                    (o.User != null && o.User.UserName.Contains(query)) ||
+                    (o.PaymentMethod != null && o.PaymentMethod.Name.Contains(query)) ||
+                    o.Status.Contains(query));
+            }
+
+            var totalOrders = await ordersQuery.CountAsync();
+            var totalPages = (int)Math.Ceiling((double)totalOrders / pageSize);
+
+            var orders = await ordersQuery
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
 
             ViewBag.Page = page;
-            ViewBag.TotalPages = (int)Math.Ceiling((double)orders.Count / pageSize);
+            ViewBag.TotalPages = totalPages;
+            ViewBag.SearchQuery = query;
+
             return View(orders);
         }
 
@@ -700,18 +855,51 @@ namespace BookStore.Controllers
             return RedirectToAction("DetailOrder", new { id = orderId });
         }
 
+
+        // POST: /Admin/DeleteOrder/id
+        [HttpPost]
+        public async Task<IActionResult> DeleteOrder(int id)
+        {
+            var order = await _context.Orders
+                .Include(o => o.OrderItems) // Load items to delete them too
+                .FirstOrDefaultAsync(o => o.Id == id);
+
+            if (order != null)
+            {
+                // Delete order items first (due to FK constraint)
+                _context.OrderItems.RemoveRange(order.OrderItems);
+
+                // Then delete the order
+                _context.Orders.Remove(order);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction("IndexOrder");
+        }
+
         #endregion
 
         #region Contact Message Management
 
         // GET: /Admin/IndexContact
-        public async Task<IActionResult> IndexContact(int page = 1)
+        public async Task<IActionResult> IndexContact(int page = 1, string query = "")
         {
             const int pageSize = 10;
-            var totalMessages = await _context.ContactMessages.CountAsync();
+
+            var messagesQuery = _context.ContactMessages.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query))
+            {
+                messagesQuery = messagesQuery.Where(m =>
+                    m.Name.Contains(query) ||
+                    m.Email.Contains(query) ||
+                    m.Message.Contains(query));
+            }
+
+            var totalMessages = await messagesQuery.CountAsync();
             var totalPages = (int)Math.Ceiling(totalMessages / (double)pageSize);
 
-            var messages = await _context.ContactMessages
+            var messages = await messagesQuery
                 .OrderByDescending(m => m.SentAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -719,6 +907,7 @@ namespace BookStore.Controllers
 
             ViewBag.Page = page;
             ViewBag.TotalPages = totalPages;
+            ViewBag.SearchQuery = query;
 
             return View(messages);
         }
